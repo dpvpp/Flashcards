@@ -51,6 +51,13 @@ class EditStack(QWidget):
 
         row.addStretch(1)
 
+        #create button for new card
+        newcard = QPushButton('Add Card')
+
+        row.addWidget(newcard)
+
+        row.addStretch(1)
+
         #create button for main menu
         #button will be fixed against right and top
         back = QPushButton('Study')

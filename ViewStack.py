@@ -49,6 +49,12 @@ class ViewStack(QWidget):
 
         row.addStretch(1)
 
+        #create button for flipping card
+        flip = QPushButton('Flip')
+        row.addWidget(flip)
+
+        row.addStretch(1)
+
         #create button for main menu
         #button will be fixed against right and top
         back = QPushButton('Edit')
