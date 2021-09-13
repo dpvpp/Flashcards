@@ -1,15 +1,14 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from db.helpers import *
 from ImagePreview import *
 from ViewStack import *
 from EditStack import *
-from db.helpers import *
 
 
 class MainMenu(QWidget):
 
-    def __init__(self, DBConnection):
-        self.DBConnection = DBConnection
+    def __init__(self):
 
         super().__init__()
 
@@ -48,7 +47,9 @@ class MainMenu(QWidget):
     @pyqtSlot()
     def onDeleteClick(self, stackID):
         print('Deleting Stack ' + str(stackID))
-        #TODO: delete stack from database
+        delete_stack(stackID)
+
+        self.refresh()
 
     @pyqtSlot()
     def onAddStackClick(self):
@@ -56,7 +57,7 @@ class MainMenu(QWidget):
 
         #create dialog box with text input for the
         #name of the stack
-        text, okPressed = QInputDialog.getText(self,
+        stackName, okPressed = QInputDialog.getText(self,
                             'Add Stack',
                             'Enter name for new stack',
                             QLineEdit.Normal, '')
@@ -65,14 +66,26 @@ class MainMenu(QWidget):
         #will be false if cancel button is pressed or the
         #dialog is closed
         if okPressed:
-            print('New Stack: ' + text)
-            create_stack(self.DBConnection, (text, 'never'))
+            print('New Stack: ' + stackName)
 
-            #create a new widget and apply the current layout to it
-            #this removes the reference so that the layout will be
-            #garbage collected
-            QWidget().setLayout(self.layout())
-            self.create() #redraw on add
+            #check if stackname is empty or contains only whitespace
+            if stackName.isspace() or stackName is '':
+                return
+
+            stackName = stackName.strip()
+
+            #check if stackname exists already
+            if stack_name_exists(stackName):
+                return
+
+            create_stack(stackName)
+
+            self.refresh()
+
+
+    def refresh(self):
+        QWidget().setLayout(self.layout())
+        self.create()
 
 
     def create(self):
@@ -82,9 +95,7 @@ class MainMenu(QWidget):
         self.editButtons = []
         self.deleteButtons = []
 
-        #get rows from database
-        rows = select_all_stacks(self.DBConnection)
-        stacks = [row[0] for row in rows] #get stackIDs from rows
+        stacks = get_stacks()
 
         self.fullList = QVBoxLayout()
 
@@ -94,15 +105,32 @@ class MainMenu(QWidget):
         #added to vertical box (QVBoxLayout) created above to create the overall
         #layout
         for stack in stacks:
+            stackID = stack[0]
+            stackName = str(stack[1])
+            lastReviewed = str(stack[2])
+
             row = QHBoxLayout()
+            row.addStretch(0.5)
+
+            stackPreview = QVBoxLayout()
+            stackPreview.setSpacing(0)
+
+            stackNameLabel = QLabel(stackName)
+            stackNameLabel.setAlignment(Qt.AlignCenter)
+            stackPreview.addWidget(stackNameLabel)
+
+            cards = get_stack_cards(stackID)
+            if len(cards) > 0:
+                topCard = ViewCard(cards[0][0], True, False)
+                stackPreview.addWidget(topCard)
+
+            row.addLayout(stackPreview)
 
             row.addStretch(1)
+            lastReviewedLabel = QLabel("Last Reviewed: \n" + lastReviewed)
+            row.addWidget(lastReviewedLabel)
 
-            image = ImagePreview()
-            
-            row.addWidget(image)
-
-            row.addStretch(5)
+            row.addStretch(4)
 
             #note: the "check" parameter is needed in the lambda as it
             #is passed by the clicked event (it is a boolean signifying if
@@ -110,19 +138,19 @@ class MainMenu(QWidget):
 
             #create study button
             study = QPushButton('Study')
-            study.clicked.connect(lambda check,x=stack: self.onStudyClick(x))
+            study.clicked.connect(lambda check,x=stackID: self.onStudyClick(x))
             self.studyButttons.append(study)
             row.addWidget(study)
 
             #create edit button
             edit = QPushButton('Edit')
-            edit.clicked.connect(lambda check,x=stack: self.onEditClick(x))
+            edit.clicked.connect(lambda check,x=stackID: self.onEditClick(x))
             self.editButtons.append(edit)
             row.addWidget(edit)
 
             #create delete button
             delete = QPushButton('Delete')
-            delete.clicked.connect(lambda check,x=stack: self.onDeleteClick(x))
+            delete.clicked.connect(lambda check,x=stackID: self.onDeleteClick(x))
             self.deleteButtons.append(delete)
             row.addWidget(delete)
 

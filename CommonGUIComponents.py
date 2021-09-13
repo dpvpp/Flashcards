@@ -10,6 +10,7 @@ from PyQt5.QtCore import *
 #with the same size and show it
 def openMainMenu(curWindow):
     if curWindow.mainMenu is not None:
+        curWindow.mainMenu.refresh()
         move(curWindow, curWindow.mainMenu)
 
 def openEditWindow(curWindow):

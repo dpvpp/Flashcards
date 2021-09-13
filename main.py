@@ -2,19 +2,13 @@
 
 import sys
 from PyQt5.QtWidgets import QApplication
-from db.helpers import *
 from MainMenu import *
 from ViewStack import *
 from EditStack import *
 
 def main():
-    # connect to the db
-    conn = create_connection("db/flashcards.db")
-
-    initialize_tables(conn)
-
-    #debuging output to see the current set of stacks
-    select_all_stacks(conn)
+    # create db tables
+    initialize_tables()
 
     #create the application
     application = QApplication(sys.argv)
@@ -28,11 +22,12 @@ def main():
             vstack = ViewStack()
             vstack.create()
     else:
-        menu = MainMenu(conn)
+        menu = MainMenu()
         menu.create()
 
     #wait for application to exit
-    sys.exit(application.exec_())
+    exitCode = application.exec_()
+    sys.exit(exitCode)
 
 
 if __name__ == "__main__":
